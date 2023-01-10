@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/go-redis/redis"
 )
@@ -27,8 +29,20 @@ func main() {
 
 	go func() {
 		for msg := range ch {
-			fmt.Println(msg.Channel, msg.Payload)
-			rdb.Publish("myCoolChannel2", msg.Payload)
+			var data map[string]interface{}
+			err := json.Unmarshal([]byte(msg.Payload), &data)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			data["timestamp"] = time.Now().Format(time.RFC1123)
+
+			b, err := json.Marshal(data)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			rdb.Publish("myCoolChannel2", b)
 		}
 	}()
 
